@@ -3,7 +3,7 @@ import json
 import time
 from groq import Groq
 from dotenv import load_dotenv
-from tools import navigate, python_repl, submit_answer, transcribe_audio
+from tools import navigate, python_repl, submit_answer, transcribe_audio, analyze_image
 
 load_dotenv()
 
@@ -23,9 +23,11 @@ AVAILABLE TOOLS:
    - Scrapes the page. Returns text, links, and audio URLs.
 2. "transcribe_audio": {"audio_url": "string"}
    - Downloads and transcribes audio files found on the page.
-3. "python_repl": {"code": "string"}
+3. "analyze_image": {"image_url": "string", "question": "string"}
+   - Use this for .png, .jpg, .jpeg links. Ask "What is the number/code in this image?".
+4. "python_repl": {"code": "string"}
    - Executes Python code. Use `pd.read_csv(url)` for data.
-4. "submit_answer": {"submission_url": "str", "quiz_url": "str", "email": "str", "secret": "str", "answer": "any"}
+5. "submit_answer": {"submission_url": "str", "quiz_url": "str", "email": "str", "secret": "str", "answer": "any"}
    - Use this to submit the final answer.
 
 STRATEGY:
@@ -39,10 +41,9 @@ STRATEGY:
 3. **LEVEL 2: SECRET CODE:**
    - If the page text says "Secret code is X", submit `answer="X"` immediately.
 
-4. **LEVEL 3: MATH / CSV / AUDIO:**
-   - **STEP A:** Look for "Cutoff" in the text.
-   - **STEP B:** Generate Python code.
-   - **CRITICAL:** ALWAYS use `header=None` when reading CSVs.
+4. **LEVEL 3: MATH / CSV / AUDIO / IMAGE:**
+   - **Audio:** Use `transcribe_audio`.
+   - **Image:** If you see an image link, use `analyze_image`.  
    - **MATH LOGIC:** The rule is ALMOST ALWAYS: **Sum of all numbers in column 0 that are GREATER THAN the cutoff.**
    - **Code Example:**
      ```python
@@ -119,10 +120,7 @@ def solve_quiz(start_url, email, secret):
         if loop_count > 25:  # Higher limit first
             print("Max loops reached. STOP.")
             break
-        if loop_count % 10 == 0:  # Reset every 10, not 15
-            print("Context refresh...")
-            messages = [{"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": f"Current: {current_url}. Email: {email}. Failed math attempts: {loop_count//2}. Cutoff=30064. Focus CSV."}]
+
         
         try:
             # CALL THE ROBUST FUNCTION
@@ -168,7 +166,12 @@ def solve_quiz(start_url, email, secret):
             
             elif tool_name == "python_repl":
                 result = python_repl(params.get("code"))
-            
+
+            elif tool_name == "analyze_image":
+                # Default question if the agent didn't provide one
+                q = params.get("question", "Extract any secret code or numbers from this image.")
+                result = analyze_image(params.get("image_url"), q)
+                
             elif tool_name == "submit_answer":
                 # Ensure credentials are present
                 params["email"] = params.get("email", email)

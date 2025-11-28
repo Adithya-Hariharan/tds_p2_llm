@@ -41,9 +41,11 @@ def navigate(url: str) -> str:
             browser.close()
             
             # Return a JSON string that the LLM can parse
+            # Return a JSON string that the LLM can parse
             return json.dumps({
-                "text": content[:1500], # Limit text to save tokens (Rate Limit prevention)
-                "links": [l for l in links if any(x in l['text'].lower() for x in ['csv', 'pdf', 'json', 'download', 'api'])],
+                "text": content[:1500], 
+                # ADDED: 'png', 'jpg', 'jpeg' to the list of interesting extensions
+                "links": [l for l in links if any(x in l['text'].lower() or x in l['href'].lower() for x in ['csv', 'pdf', 'json', 'download', 'png', 'jpg', 'jpeg'])],
                 "audio": audio_src,
                 "submission_url": submit_url
             })
