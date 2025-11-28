@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+requests
+playwright
+groq
+python-dotenv
+pandas
+numpy
+beautifulsoup4
+scikit-learn
+matplotlib
+seaborn
+python-multipart
