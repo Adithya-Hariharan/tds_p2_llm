@@ -19,6 +19,8 @@ def transcribe_audio(audio_url: str) -> str:
         if response.status_code != 200:
             return f"Error: Failed to download audio (Status {response.status_code})"
         
+        if len(response.content) < 100:
+             return f"Error: Downloaded file is too small. It might not be audio."
         # Groq supports these formats: flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm
         # We try to detect extension or default to .mp3
         if ".ogg" in audio_url: ext = ".ogg"
@@ -34,7 +36,7 @@ def transcribe_audio(audio_url: str) -> str:
         with open(filename, "rb") as file:
             transcription = client.audio.transcriptions.create(
                 file=(filename, file.read()),
-                model="distil-whisper-large-v3-en", # Free & Fast model
+                model="whisper-large-v3",
                 response_format="json",
                 language="en",
                 temperature=0.0
