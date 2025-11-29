@@ -11,6 +11,10 @@ def transcribe_audio(audio_url: str) -> str:
     Downloads audio from a URL and transcribes it using Groq's Whisper model.
     """
     print(f"[Tool] Transcribing: {audio_url}")
+
+    if not audio_url.startswith(("http://", "https://")):
+        audio_url = "https://tds-llm-analysis.s-anand.net" + audio_url
+        print(f"[Tool] Fixed to full URL: {audio_url}")
     temp_filename = "temp_audio_file"
     
     try:
